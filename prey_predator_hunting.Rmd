@@ -1,0 +1,103 @@
+---
+title: "Predator Prey Stability"
+author: "Victoria Cutler & Mallory"
+date: "2023-06-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sensitivity)
+library(tidyverse)
+library(deSolve)
+library(lhs)
+library(purrr)
+library(ggpubr)
+```
+
+Assignment:
+
+Consider how you might add hunting of prey to the predator prey model that we've been using in class
+
+Build this model (e.g add harvesting to the lotvmodK.R), you should make sure that you don't hunt more prey than exist. To ensure that you might also add a minumum prey population input that must be met before hunting is allowed.
+
+Explore how different hunting levels and different minimum prey populations (before hunting is allowed) are likely to effect the stability of the populations of both predator and prey. Use this exploration to recommend a hunting target that will be sustainable (e.g leave you with a stable prey and predator population)
+
+You can assume the following rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000
+
+Exploring Hunting Levels and Minimum Prey Populations to Permit Hunting
+```{r}
+source("R/lotvmodK.R")
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.10, min_prey_pop = 1)
+# times when you want to evaluate
+days = seq(from=1,to=500)
+currpop=c(prey=1, pred=1)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p1 = ggplot(res, aes(time, pop, col=animal))+geom_line()
+p1
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.50, min_prey_pop = 1)
+# times when you want to evaluate
+days = seq(from=1,to=500)
+currpop=c(prey=1, pred=1)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p2 = ggplot(res, aes(time, pop, col=animal))+geom_line()
+p2
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.25, min_prey_pop = 100)
+# times when you want to evaluate
+days = seq(from=1,to=500)
+currpop=c(prey=1, pred=1)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p3 = ggplot(res, aes(time, pop, col=animal))+geom_line()
+p3
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 1, min_prey_pop = 0)
+# times when you want to evaluate
+days = seq(from=1,to=500)
+currpop=c(prey=1, pred=1)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p4 = ggplot(res, aes(time, pop, col=animal))+geom_line()
+p4
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 1, min_prey_pop = 0)
+# times when you want to evaluate
+days = seq(from=1,to=500)
+currpop=c(prey=1, pred=1)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p5 = ggplot(res, aes(time, pop, col=animal))+geom_line()
+p5
+
+# looking at hunting levels and prey populations
+hunt_level <- seq(from = 0, to = 1, by = 0.01)
+dpredprey <- map_df(hunt_level, ~lotvmodK(pop = currpop, t = NULL, pars = list(rprey = 0.95, alpha = 0.01, eff = 0.6, pmort = 0.4, K = 2000, min_prey_pop = 1, hunt_level = .x)))
+
+a = ggplot(data = dpredprey, aes(hunt_level, prey_growth))+geom_point()+geom_hline(yintercept = 0, col="red")+
+  labs(y="Prey Growth Rate", x="Hunting Rate")
+a 
+```
+
+
+A key challenge is how you might want to define stability? Its up to you but you will need to write a sentence to explain why you chose the measure that you did.  It could be something as simple as maintaining a population above some value 50 years into the future.
+
+Its also up to you how you "explore" hunting  - you can simply try different values or do it more formally by running your model across a range of values
+
+Recommended Hunting Strategy 
+```{r}
+# to maintain a population above a value for 50 years 
+print("If we assume that predator and prey populations are at a value of 1 (and rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000), in order to maintain a stable population for predator and prey, I recommend allowing 75% of prey to be hunted each year.")
+```
+
+
+Submit the Rmarkdown that documents your exploration (e.g how you tested different hunting levels and how you defined a stability metric). At the end of your Rmarkdown present a recommendation for sustainable hunting and 1-2 sentences to justify your recommendation based on your analysis.
