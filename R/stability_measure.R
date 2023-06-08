@@ -1,15 +1,10 @@
-# define a function that measures stability
-stability_measure <- function(res, threshold=0.75, year_check=500) {
-  # check if the populations at year_check are at least threshold percent of initial populations
-  initial_prey_pop <- res$pop[res$animal == 'prey' & res$time == min(res$time)]
+stability_measure <- function(res) {
+  # get the initial population of the predator
   initial_pred_pop <- res$pop[res$animal == 'pred' & res$time == min(res$time)]
   
-  prey_pop_at_year_check <- res$pop[res$animal == 'prey' & floor(res$time) == year_check]
-  pred_pop_at_year_check <- res$pop[res$animal == 'pred' & floor(res$time) == year_check]
+  # get the latest population of the predator
+  latest_pred_pop <- res$pop[res$animal == 'pred' & res$time == max(res$time)]
   
-  prey_stability <- all(prey_pop_at_year_check >= threshold * initial_prey_pop)
-  pred_stability <- all(pred_pop_at_year_check >= threshold * initial_pred_pop)
-  
-  # return TRUE only if both populations are stable
-  return(prey_stability & pred_stability)
+  # check if the predator population is at least twice the initial population
+  return(latest_pred_pop >= 2 * initial_pred_pop)
 }

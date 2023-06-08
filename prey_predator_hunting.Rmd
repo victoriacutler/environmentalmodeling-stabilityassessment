@@ -19,100 +19,72 @@ library(ggpubr)
 
 Consider how you might add hunting of prey to the predator prey model that we've been using in class
 
-Build this model (e.g add harvesting to the lotvmodK.R), you should make sure that you don't hunt more prey than exist. To ensure that you might also add a minumum prey population input that must be met before hunting is allowed.
-
-Explore how different hunting levels and different minimum prey populations (before hunting is allowed) are likely to effect the stability of the populations of both predator and prey. Use this exploration to recommend a hunting target that will be sustainable (e.g leave you with a stable prey and predator population)
-
 You can assume the following rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000
 
 **Exploring Hunting Levels and Minimum Prey Populations to Permit Hunting**
-
-*We defined our stability metric that if both the predator and prey population at time 500 is 75% or more than the initial population, our system is defined as stable*
 
 ```{r}
 source("R/lotvmodK.R")
 source("R/stability_measure.R")
 
-# set parameter list
-pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.10, min_prey_pop = 1)
-# times when you want to evaluate
-days = seq(from=1,to=500)
-currpop=c(prey=1, pred=1)
-res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
-res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
-p1 = ggplot(res, aes(time, pop, col=animal))+geom_line()
-p1
-
-stability <- stability_measure(res)
-print(paste("The system is stable: ", stability))
-
-# set parameter list
-pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.50, min_prey_pop = 1)
-# times when you want to evaluate
-days = seq(from=1,to=500)
-currpop=c(prey=1, pred=1)
-res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
-res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
-p2 = ggplot(res, aes(time, pop, col=animal))+geom_line()
-p2
-
-stability <- stability_measure(res)
-print(paste("The system is stable: ", stability))
-
-# set parameter list
-pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.25, min_prey_pop = 100)
-# times when you want to evaluate
-days = seq(from=1,to=500)
-currpop=c(prey=1, pred=1)
-res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
-res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
-p3 = ggplot(res, aes(time, pop, col=animal))+geom_line()
-p3
-
-stability <- stability_measure(res)
-print(paste("The system is stable: ", stability))
-
-# set parameter list
-pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 1, min_prey_pop = 0)
-# times when you want to evaluate
-days = seq(from=1,to=500)
-currpop=c(prey=1, pred=1)
-res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
-res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
-p4 = ggplot(res, aes(time, pop, col=animal))+geom_line()
-p4
-
-stability <- stability_measure(res)
-print(paste("The system is stable: ", stability))
-
-# set parameter list
-pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 1, min_prey_pop = 0)
-# times when you want to evaluate
-days = seq(from=1,to=500)
-currpop=c(prey=1, pred=1)
-res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
-res = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
-p5 = ggplot(res, aes(time, pop, col=animal))+geom_line()
-p5
-
-stability <- stability_measure(res)
-print(paste("The system is stable: ", stability))
+currpop = c(prey=70, pred=50) #Defining our starting population 
 
 # looking at hunting levels and prey populations
 hunt_level <- seq(from = 0, to = 1, by = 0.01)
-dpredprey <- map_df(hunt_level, ~lotvmodK(pop = currpop, t = NULL, pars = list(rprey = 0.95, alpha = 0.01, eff = 0.6, pmort = 0.4, K = 2000, min_prey_pop = 1, hunt_level = .x)))
+dpredprey <- map_df(hunt_level, ~lotvmodK(pop = currpop, t = NULL, pars = list(rprey = 0.95, alpha = 0.01, eff = 0.6, pmort = 0.4, K = 2000, min_prey_pop = 70, hunt_level = .x)))
 
 a = ggplot(data = dpredprey, aes(hunt_level, prey_growth))+geom_point()+geom_hline(yintercept = 0, col="red")+
   labs(y="Prey Growth Rate", x="Hunting Rate")
 a 
+
+print("If we assume that predator and prey populations are at a value of 70 & 50 (and rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000), in order to maintain a postive growth rate for prey, with a minimum prey population to hunt of 70, the hunting rate should exceed more than 40%")
 ```
 
-A key challenge is how you might want to define stability? Its up to you but you will need to write a sentence to explain why you chose the measure that you did.  It could be something as simple as maintaining a population above some value 50 years into the future.
+**We defined our stability metric under this scenario: suppose the predator is an endangered species, which there is a goal that in 100 years, the population should be twice the size of the current population. Under this scenario, both our goal and our measure of stability will be growth**
 
-Its also up to you how you "explore" hunting  - you can simply try different values or do it more formally by running your model across a range of values
+*Therefor, our stability metric is that the population of the predator must be twice the size of the starting condition*
 
-*Recommended Hunting Strategy*
 ```{r}
-# to maintain a population above a value for 50 years 
-print("If we assume that predator and prey populations are at a value of 1 (and rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000), in order to maintain a stable population for predator and prey,we recommend allowing 75% of prey to be hunted each year.")
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.10, min_prey_pop = 80)
+# times when you want to evaluate
+days = seq(from=1,to=100)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res1 = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p1 = ggplot(res1, aes(time, pop, col=animal))+geom_line()
+p1
+
+stability <- stability_measure(res1)
+print(paste("The system is stable: ", stability))
+
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.20, min_prey_pop = 80)
+# times when you want to evaluate
+days = seq(from=1,to=100)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res2 = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p2 = ggplot(res2, aes(time, pop, col=animal))+geom_line()
+p2
+
+stability <- stability_measure(res2)
+print(paste("The system is stable: ", stability))
+
+
+# set parameter list
+pars = data.frame(rprey=0.95, alpha=0.01, eff=0.6,pmort=0.4, K=2000, hunt_level = 0.05, min_prey_pop = 110)
+# times when you want to evaluate
+days = seq(from=1,to=100)
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+res3 = as.data.frame(res) %>% gather(key="animal", value="pop",-time)
+p2 = ggplot(res3, aes(time, pop, col=animal))+geom_line()
+p2
+
+stability <- stability_measure(res3)
+print(paste("The system is stable: ", stability))
 ```
+
+**Recommended Hunting Strategy**
+
+*To bring our system back to stability (or double our predator population) we recommend that the hunting level doesn't exceed 5%, bearing in mind that you should let the prey population grow to a population of 110 before you let hunting begin. This is necessary because we need there to be abundant prey for the predators to eat to then grow their population*
+
